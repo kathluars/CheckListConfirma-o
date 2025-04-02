@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checklist e Anotações</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+    }
+    .checklist {
+      margin: 20px 0;
+    }
+    .checklist label {
+      display: block;
+      margin-bottom: 10px;
+    }
+    textarea, input, select {
+      width: 100%;
+      padding: 8px;
+      font-size: 1em;
+    }
+    textarea {
+      height: 150px;
+      resize: vertical;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <h1 style="margin: 0;">Checklist Confirmação</h1>
+    <input type="date" id="dataChecklist" />
+  </div>
+
+  <label for="cliente"><strong>Nome do Cliente:</strong></label>
+  <input type="text" id="cliente" placeholder="Digite o nome do cliente" />
+
+  <div class="checklist">
+    <label><input type="checkbox" id="cnpj"> CNPJ de faturamento</label>
+    <label><input type="checkbox" id="emailFinanceiro"> E-mail do financeiro</label>
+    <label><input type="checkbox" id="acompanhante"> Pessoa que vai acompanhar o especialista</label>
+    <label><input type="checkbox" id="podeReceber"> Pode receber a gente na data informada</label>
+    <label><input type="checkbox" id="modeloConfirmado"> Confirmação do modelo do aparelho</label>
+    <label><input type="checkbox" id="problemaConfirmado"> Confirmação do problema ou serviço solicitado</label>
+    <label>
+      Foi confirmado por:
+      <select id="confirmadoPor">
+        <option value="">Selecione uma opção</option>
+        <option value="zap">Zap</option>
+        <option value="telefone">Telefone</option>
+        <option value="email">E-mail</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="vendedoraErrou"> A vendedora errou alguma informação?</label>
+  </div>
+
+  <h2>Anotações</h2>
+  <textarea id="notas" placeholder="Escreva suas anotações aqui..."></textarea>
+  <button onclick="salvarTudo()">Salvar</button>
+  <button onclick="limparTudo()">Limpar</button>
+  <button onclick="mostrarHistorico()">Ver Histórico de Registros</button>
+  <button onclick="exportarHistorico()">Exportar Histórico (.txt)</button>
+
+  <script>
+    let historico = JSON.parse(localStorage.getItem('historicoChecklist') || '[]');
+
+    const campos = {
+      cliente: document.getElementById('cliente'),
+      dataChecklist: document.getElementById('dataChecklist'),
+      cnpj: document.getElementById('cnpj'),
+      emailFinanceiro: document.getElementById('emailFinanceiro'),
+      acompanhante: document.getElementById('acompanhante'),
+      podeReceber: document.getElementById('podeReceber'),
+      modeloConfirmado: document.getElementById('modeloConfirmado'),
+      problemaConfirmado: document.getElementById('problemaConfirmado'),
+      confirmadoPor: document.getElementById('confirmadoPor'),
+      vendedoraErrou: document.getElementById('vendedoraErrou'),
+      notas: document.getElementById('notas')
+    };
+
+    function salvarTudo() {
+      const dados = {};
+      for (let campo in campos) {
+        if (campos[campo].type === 'checkbox') {
+          dados[campo] = campos[campo].checked;
+        } else {
+          dados[campo] = campos[campo].value;
+        }
+      }
+      localStorage.setItem('checklistConfirmacao', JSON.stringify(dados));
+      historico.push({ data: new Date().toLocaleString(), ...dados });
+      localStorage.setItem('historicoChecklist', JSON.stringify(historico));
+      alert('Dados salvos com sucesso!');
+    }
+
+    function limparTudo() {
+      if (confirm('Tem certeza que deseja limpar todos os dados?')) {
+        for (let campo in campos) {
+          if (campos[campo].type === 'checkbox') {
+            campos[campo].checked = false;
+          } else {
+            campos[campo].value = '';
+          }
+        }
+        localStorage.removeItem('checklistConfirmacao');
+      }
+    }
+
+    function mostrarHistorico() {
+      const historicoSalvo = JSON.parse(localStorage.getItem('historicoChecklist'));
+      if (historicoSalvo && historicoSalvo.length) {
+        let texto = historicoSalvo.map((item, index) => {
+          return `#${index + 1} - ${item.data}
+Cliente: ${item.cliente || '---'}
+Data do checklist: ${item.dataChecklist || '---'}
+CNPJ: ${item.cnpj ? '✅' : '❌'}
+Email Financeiro: ${item.emailFinanceiro ? '✅' : '❌'}
+Acompanhante: ${item.acompanhante ? '✅' : '❌'}
+Pode Receber: ${item.podeReceber ? '✅' : '❌'}
+Modelo Confirmado: ${item.modeloConfirmado ? '✅' : '❌'}
+Problema Confirmado: ${item.problemaConfirmado ? '✅' : '❌'}
+Confirmado Por: ${item.confirmadoPor || '---'}
+Vendedora Errou: ${item.vendedoraErrou ? '✅' : '❌'}
+Anotações: ${item.notas || '---'}
+`;
+        }).join('\n-------------------------\n');
+        alert(texto);
+      } else {
+        alert('Nenhum histórico encontrado.');
+      }
+    }
+
+    function exportarHistorico() {
+      const historicoSalvo = JSON.parse(localStorage.getItem('historicoChecklist'));
+      if (!historicoSalvo || !historicoSalvo.length) {
+        alert('Nenhum histórico para exportar.');
+        return;
+      }
+      let conteudo = historicoSalvo.map((item, index) => {
+        return `#${index + 1} - ${item.data}
+Cliente: ${item.cliente || '---'}
+Data do checklist: ${item.dataChecklist || '---'}
+CNPJ: ${item.cnpj ? '✅' : '❌'}
+Email Financeiro: ${item.emailFinanceiro ? '✅' : '❌'}
+Acompanhante: ${item.acompanhante ? '✅' : '❌'}
+Pode Receber: ${item.podeReceber ? '✅' : '❌'}
+Modelo Confirmado: ${item.modeloConfirmado ? '✅' : '❌'}
+Problema Confirmado: ${item.problemaConfirmado ? '✅' : '❌'}
+Confirmado Por: ${item.confirmadoPor || '---'}
+Vendedora Errou: ${item.vendedoraErrou ? '✅' : '❌'}
+Anotações: ${item.notas || '---'}
+
+-------------------------
+`;
+      }).join('\n');
+      const blob = new Blob([conteudo], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'historico_checklist.txt';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    window.onload = () => {
+      const dados = JSON.parse(localStorage.getItem('checklistConfirmacao'));
+      if (dados) {
+        for (let campo in dados) {
+          if (campos[campo]) {
+            if (campos[campo].type === 'checkbox') {
+              campos[campo].checked = dados[campo];
+            } else {
+              campos[campo].value = dados[campo];
+            }
+          }
+        }
+      }
+    };
+  </script>
+</body>
+</html>
